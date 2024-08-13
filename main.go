@@ -15,7 +15,8 @@ import (
 	nlp "go4search/nlp"
 	searchengine "go4search/searchengine"
 
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 var SearchEngine searchengine.SearchEngine
@@ -103,16 +104,7 @@ func main() {
 	}()
 
 	app := fiber.New()
-	// app.Use(cors.New())
-	app.Get("/search", func(c *fiber.Ctx) {
-		query := c.Query("q")
-		if query == "" {
-			c.Status(400).Send("No query provided")
-			return
-		}
-		results := SearchEngine.Search(query, 20)
-		c.JSON(results)
-	})
+	app.Use(cors.New())
 
 	// run endless loop to accept search queries from the user
 	for {
