@@ -7,7 +7,7 @@ import (
 
 	documents "raven/documents"
 	nlp "raven/nlp"
-	bloomfilter "raven/searchengine/bloomfilter"
+	bloomfilter "raven/websearchengine/bloomfilter"
 )
 
 type SearchEngine struct {
