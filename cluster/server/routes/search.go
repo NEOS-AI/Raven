@@ -3,7 +3,7 @@ package routes
 import (
 	"github.com/gofiber/fiber/v2"
 
-	searchengine "raven/searchengine"
+	searchengine "github.com/YeonwooSung/raven/searchengine"
 )
 
 var searchEngine *searchengine.SearchEngine
