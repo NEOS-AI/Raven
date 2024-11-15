@@ -3,7 +3,7 @@ package searchengine
 import (
 	documents "raven/documents"
 	nlp "raven/nlp"
-	bloomfilter "raven/websearchengine/bloomfilter"
+	bloomfilter "raven/searchengine/bloomfilter"
 	"strings"
 )
 

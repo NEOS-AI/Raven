@@ -13,7 +13,7 @@ import (
 
 	documents "raven/documents"
 	nlp "raven/nlp"
-	searchengine "raven/websearchengine"
+	searchengine "raven/searchengine"
 
 	"github.com/gofiber/fiber"
 	"github.com/gofiber/fiber/v2/middleware/cors"
