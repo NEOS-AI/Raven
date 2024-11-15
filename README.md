@@ -1,4 +1,4 @@
-<img src="./imgs/raven.png" width="100px" height="50px" title="Raven_LOGO"/>
+<img src="./imgs/raven.png" width="200px" height="200px" title="Raven_LOGO"/>
 
 # Raven
 
