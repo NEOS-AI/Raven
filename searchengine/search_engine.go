@@ -23,8 +23,8 @@ type SearchEngine struct {
 
 const SCORE_THRESHOLD = 0.5
 
-const BM25_WEIGHT = 0.5
-const TFIDF_WEIGHT = 0.5
+const BM25_WEIGHT = 0.8
+const TFIDF_WEIGHT = 0.2
 
 func (se *SearchEngine) SetK1(k1 float64) {
 	se.K1 = k1
