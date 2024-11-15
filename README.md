@@ -29,6 +29,9 @@ For visualizing the profiling and tracing, open `http://localhost:6060/debug/ppr
 * [ ] Levenshtein Distance Spell Correction
 * [ ] Pseudo Relevance Feedback
 * [ ] Query Expansion
+* [ ] Add support for vector index
+    * [ ] HNSW
+    * [ ] Flat
 
 ## References
 
