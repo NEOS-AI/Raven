@@ -22,7 +22,7 @@ For visualizing the profiling and tracing, open `http://localhost:6060/debug/ppr
 
 ## ToDos
 
-* [v] Use bloomfilter for filtering the UNK tokens
+* [x] Use bloomfilter for filtering the UNK tokens
 * [ ] Make search engine to be able to load & save to/from file system
     * [ ] Build index from reading and parsing raw text files
     * [ ] Save and load index and bloom filters to file
