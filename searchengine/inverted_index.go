@@ -1,10 +1,11 @@
 package searchengine
 
 import (
-	documents "raven/documents"
-	nlp "raven/nlp"
-	bloomfilter "raven/searchengine/bloomfilter"
 	"strings"
+
+	documents "github.com/YeonwooSung/raven/documents"
+	nlp "github.com/YeonwooSung/raven/nlp"
+	bloomfilter "github.com/YeonwooSung/raven/searchengine/bloomfilter"
 )
 
 type InvertedIndex map[string][]int

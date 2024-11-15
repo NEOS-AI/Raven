@@ -11,9 +11,10 @@ import (
 	"os"
 	"strings"
 
-	documents "raven/documents"
-	nlp "raven/nlp"
-	searchengine "raven/searchengine"
+	logger "github.com/YeonwooSung/raven/cluster/log"
+	documents "github.com/YeonwooSung/raven/documents"
+	nlp "github.com/YeonwooSung/raven/nlp"
+	searchengine "github.com/YeonwooSung/raven/searchengine"
 
 	"github.com/gofiber/fiber"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -22,6 +23,9 @@ import (
 var SearchEngine searchengine.SearchEngine
 
 func init() {
+	// init the singleton logger
+	logger.RavenLogger.InitLoggers()
+
 	// docs := ParseFetchAndReturnDocuments()
 	docs := []documents.Document{
 		{ID: 0, Content: "Lorem ipsum blah blah fox"},
