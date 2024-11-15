@@ -1,4 +1,4 @@
-module go4search
+module raven
 
 go 1.21
 

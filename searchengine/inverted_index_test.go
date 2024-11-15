@@ -3,7 +3,7 @@ package searchengine
 import (
 	"testing"
 
-	documents "go4search/documents"
+	documents "raven/documents"
 )
 
 func TestBuildInvertedIndex(t *testing.T) {

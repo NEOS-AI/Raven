@@ -5,9 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	documents "go4search/documents"
-	nlp "go4search/nlp"
-	bloomfilter "go4search/searchengine/bloomfilter"
+	documents "raven/documents"
+	nlp "raven/nlp"
+	bloomfilter "raven/searchengine/bloomfilter"
 )
 
 type SearchEngine struct {

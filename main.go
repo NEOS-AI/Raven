@@ -11,9 +11,9 @@ import (
 	"os"
 	"strings"
 
-	documents "go4search/documents"
-	nlp "go4search/nlp"
-	searchengine "go4search/searchengine"
+	documents "raven/documents"
+	nlp "raven/nlp"
+	searchengine "raven/searchengine"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"

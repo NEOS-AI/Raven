@@ -1,6 +1,6 @@
-# Go4Search
+# Raven
 
-Golang based search engine implementation.
+Raven is a cloud-native search engine database.
 
 ## Implemented Features
 

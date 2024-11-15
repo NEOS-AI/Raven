@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	documents "go4search/documents"
+	documents "raven/documents"
 )
 
 func parseFetchAndReturnDocument(record []string) documents.Document {

@@ -3,7 +3,7 @@ package searchengine
 import (
 	"github.com/bbalet/stopwords"
 
-	nlp "go4search/nlp"
+	nlp "raven/nlp"
 )
 
 func removeStopwords(query string) string {
