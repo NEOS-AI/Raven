@@ -1,3 +1,5 @@
+<img src="./imgs/raven.png" width="100px" height="50px" title="Raven_LOGO"/>
+
 # Raven
 
 Raven is a cloud-native search engine database.
