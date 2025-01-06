@@ -28,6 +28,7 @@ For visualizing the profiling and tracing, open `http://localhost:6060/debug/ppr
 * [ ] Make search engine to be able to load & save to/from file system
     * [ ] Build index from reading and parsing raw text files
     * [ ] Save and load index and bloom filters to file
+    * [x] Add support for incremental indexing with flushing
 * [ ] Enhance the FTS features
     * [ ] Build fuzzy full-text search by using SuffixTree
     * [ ] Levenshtein Distance Spell Correction
