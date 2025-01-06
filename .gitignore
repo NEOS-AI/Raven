@@ -26,5 +26,8 @@ go.work
 # vscode
 .vscode
 
-# output file
+# generated executable
 raven
+
+# logs
+.log/

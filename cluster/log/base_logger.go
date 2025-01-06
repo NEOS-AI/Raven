@@ -14,11 +14,16 @@ type Logger struct {
 	errorLogger   *log.Logger
 }
 
+const BaseLogPath = "./.log"
+
 // Logger has method "initLoggers", which initialize loggers with basic settings
 func (l *Logger) InitLoggers() {
-	absPath, err := filepath.Abs("../log")
+	absPath, err := filepath.Abs(BaseLogPath)
 	if err != nil {
 		fmt.Println("Error reading given path:", err)
+	}
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		os.MkdirAll(absPath, 0755)
 	}
 
 	generalLog, err := os.OpenFile(absPath+"/general-log.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
