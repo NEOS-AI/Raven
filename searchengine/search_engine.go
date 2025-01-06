@@ -11,7 +11,7 @@ import (
 )
 
 type SearchEngine struct {
-	Index         InvertedIndex
+	Index         PagedInvertedIndex
 	Documents     []documents.Document
 	TotalDocCount float64
 	TotalDocLen   float64
@@ -53,7 +53,7 @@ func (se *SearchEngine) AddNewDocument(doc documents.Document) {
 	}
 
 	// update the inverted index and the bloom filter
-	UpdateInvertedIndexWithDoc(se.Index, doc, true, se.Bloomfilter)
+	se.Index.UpdateInvertedIndexWithDoc(doc, true)
 
 	// increase the docLength
 	docLength += currentDocLength
@@ -78,16 +78,24 @@ func (se *SearchEngine) CalculateTFIDFScore(tokens []string) map[int]float64 {
 
 	// iterate all tokens in the query
 	for _, token := range tokens {
-		if docSet, ok := se.Index[token]; ok {
-			idf := math.Log(float64(len(se.Documents)) / float64(len(docSet)))
+		docSet := se.Index.Search(token)
+		if docSet == nil {
+			continue
+		}
 
-			// iterate all document that contains the token
-			for _, docID := range docSet {
-				tf := float64(strings.Count(strings.ToLower(se.Documents[docID].Content), token))
+		// check if docSet is empty
+		if len(docSet) == 0 {
+			continue
+		}
 
-				// TF-IDF score * weight
-				scores[docID] += tf * idf * TFIDF_WEIGHT
-			}
+		idf := math.Log(float64(len(se.Documents)) / float64(len(docSet)))
+
+		// iterate all document that contains the token
+		for _, docID := range docSet {
+			tf := float64(strings.Count(strings.ToLower(se.Documents[docID].Content), token))
+
+			// TF-IDF score * weight
+			scores[docID] += tf * idf * TFIDF_WEIGHT
 		}
 	}
 
@@ -106,7 +114,7 @@ func (se *SearchEngine) CalculateBM25Score(tokens []string) map[int]float64 {
 
 	// iterate all tokens in the query
 	for _, token := range tokens {
-		if docSet, ok := se.Index[token]; ok {
+		if docSet, ok := se.Index.CurrentIdx[token]; ok {
 			idf := math.Log(float64(len(se.Documents)-len(docSet))+0.5) / (float64(len(docSet)) + 0.5)
 
 			// iterate all document that contains the token

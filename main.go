@@ -15,12 +15,12 @@ import (
 	documents "github.com/YeonwooSung/raven/documents"
 	nlp "github.com/YeonwooSung/raven/nlp"
 	searchengine "github.com/YeonwooSung/raven/searchengine"
-
-	"github.com/gofiber/fiber"
-	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 var SearchEngine searchengine.SearchEngine
+
+const PAGE_SIZE = 10_000_000
+const PAGE_PATH = "data/pages"
 
 func init() {
 	// init the singleton logger
@@ -61,16 +61,18 @@ func init() {
 		{ID: 30, Content: "It was the day my grandmother exploded."},
 		{ID: 31, Content: "아이유(IU, 본명: 이지은, 李知恩, 1993년 5월 16일~)는 대한민국의 가수이자 배우이다. 배우로 활동할 때도 예명을 사용한다. '아이유(IU)'라는 예명은 'I'와 'You'를 합친 합성어로 '너와 내가 음악으로 하나가 된다'라는 의미이다"},
 	}
-	SaveDocsAsCsv(docs, "data/result.csv")
+	// SaveDocsAsCsv(docs, "data/result.csv")
 
 	// initialize the tokenizer
 	nlp.Init_Tokenizer()
 
 	useTokenizer := true
-	index, sbf := searchengine.BuildInvertedIndex(docs, useTokenizer)
+	index := searchengine.NewPagedInvertedIndex(PAGE_SIZE, PAGE_PATH)
+	index.BuildInvertedIndex(docs, useTokenizer)
+
 	docLength := 0.
 	count := 0
-	maxThreshold := math.MaxFloat64 - 100
+	maxThreshold := math.MaxFloat64 - 10
 	for _, doc := range docs {
 		currentDocLength := float64(len(doc.Content))
 		// check if docLength + currentDocLength is too large to avoid overflow
@@ -90,14 +92,14 @@ func init() {
 
 	// initialize the search engine
 	SearchEngine = searchengine.SearchEngine{
-		Index:         index,
+		Index:         (*index),
 		Documents:     docs,
 		TotalDocCount: countF,
 		TotalDocLen:   docLength,
 		AvgDocLength:  docLength / countF,
 		K1:            1.2,
 		B:             0.75,
-		Bloomfilter:   sbf,
+		Bloomfilter:   (*index).BloomFilter,
 	}
 }
 
@@ -106,9 +108,6 @@ func main() {
 	go func() {
 		fmt.Println(http.ListenAndServe("0.0.0.0:6060", nil))
 	}()
-
-	app := fiber.New()
-	app.Use(cors.New())
 
 	// run endless loop to accept search queries from the user
 	for {

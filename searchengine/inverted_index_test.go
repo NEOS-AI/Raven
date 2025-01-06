@@ -25,14 +25,15 @@ func TestBuildInvertedIndex(t *testing.T) {
 	documents := []documents.Document{doc1, doc2, doc3}
 
 	// Call the BuildInvertedIndex function
-	invertedIndex, _ := BuildInvertedIndex(documents, false)
+	invertedIndex := NewPagedInvertedIndex(100, "data/pages")
+	invertedIndex.BuildInvertedIndex(documents, false)
 
 	// Perform assertions to verify the correctness of the inverted index
 
 	// Assert that the inverted index contains the expected tokens
 	expectedTokens := []string{"this", "is", "the", "first", "document", "second", "third"}
 	for _, token := range expectedTokens {
-		if _, ok := invertedIndex[token]; !ok {
+		if _, ok := invertedIndex.CurrentIdx[token]; !ok {
 			t.Errorf("Token %s not found in the inverted index", token)
 		}
 	}
@@ -48,7 +49,7 @@ func TestBuildInvertedIndex(t *testing.T) {
 		"third":    {3},
 	}
 	for token, expectedIDs := range expectedDocIDs {
-		if ids, ok := invertedIndex[token]; ok {
+		if ids, ok := invertedIndex.CurrentIdx[token]; ok {
 			if !equalSlice(ids, expectedIDs) {
 				t.Errorf("Mismatched document IDs for token %s. Expected %v, got %v", token, expectedIDs, ids)
 			}
