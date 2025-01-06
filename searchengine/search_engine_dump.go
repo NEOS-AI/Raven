@@ -1,5 +1,6 @@
 package searchengine
 
+// Dump: Dump the search engine to disk
 func (engine SearchEngine) Dump() {
-	//TODO
+	engine.Index.FlushToDisk()
 }
