@@ -30,7 +30,7 @@ For visualizing the profiling and tracing, open `http://localhost:6060/debug/ppr
     * [ ] Save and load index and bloom filters to file
     * [x] Add support for incremental indexing with flushing
 * [ ] Enhance the FTS features
-    * [ ] Build fuzzy full-text search by using SuffixTree
+    * [ ] Build fuzzy full-text search by using SuffixTree (or B-Tree)
     * [ ] Levenshtein Distance Spell Correction
     * [ ] Pseudo Relevance Feedback
 * [ ] Add support for vector index
