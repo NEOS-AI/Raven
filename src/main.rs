@@ -22,7 +22,8 @@ struct Args {
 
 #[derive(Subcommand)]
 enum Commands {
-    Crawl {},
+    Single {},
+    Distributed {},
 }
 
 // config
@@ -72,9 +73,13 @@ fn main() -> Result<()> {
     // Parse the command line arguments.
     let args = Args::parse();
     match args.command {
-        Commands::Crawl {} => {
+        Commands::Single {} => {
             //TODO
-            tracing::info!("Crawling...");
+            tracing::info!("Single...");
+        }
+        Commands::Distributed {} => {
+            //TODO
+            tracing::info!("Distributed...");
         }
     }
 
