@@ -31,3 +31,8 @@ raven
 
 # logs
 .log/
+
+
+# Added by cargo
+
+/target
