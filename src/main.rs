@@ -5,6 +5,9 @@ use std::fs;
 use std::path::Path;
 use tracing_subscriber::prelude::*;
 
+mod schema;
+mod tokenizers;
+
 #[cfg(not(target_env = "msvc"))]
 use tikv_jemallocator::Jemalloc;
 
