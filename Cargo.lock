@@ -3,24 +3,6 @@
 version = 4
 
 [[package]]
-name = "Raven"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "hashbrown 0.15.3",
- "serde",
- "tantivy",
- "tikv-jemallocator",
- "tokio",
- "toml",
- "tracing",
- "tracing-subscriber",
- "tracing-test",
- "whatlang",
-]
-
-[[package]]
 name = "addr2line"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -926,6 +908,25 @@ checksum = "32cb0b9bc82b0a0876c2dd994a7e7a2683d3e7390ca40e6886785ef0c7e3ee31"
 dependencies = [
  "num-traits",
  "rand",
+]
+
+[[package]]
+name = "raven"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "hashbrown 0.15.3",
+ "serde",
+ "tantivy",
+ "thiserror",
+ "tikv-jemallocator",
+ "tokio",
+ "toml",
+ "tracing",
+ "tracing-subscriber",
+ "tracing-test",
+ "whatlang",
 ]
 
 [[package]]

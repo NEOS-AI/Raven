@@ -26,10 +26,18 @@ enum Commands {
     Distributed {},
 }
 
+//
 // config
-#[derive(Debug, serde::Deserialize)]
+//
+#[derive(serde::Deserialize)]
 struct Config {
-    //
+    app: AppConfig,
+}
+#[derive(serde::Deserialize)]
+struct AppConfig {
+    name: String,
+    version: String,
+    description: String,
 }
 
 fn load_toml_config<T: DeserializeOwned, P: AsRef<Path>>(path: P) -> T {
@@ -68,7 +76,9 @@ fn main() -> Result<()> {
     // Load the configuration file.
     let config_path = std::env::var("APP_CONFIG").unwrap_or_else(|_| "../app.toml".to_string());
     let config: Config = load_toml_config(&config_path);
-    tracing::info!("Loaded config: {:?}", config);
+    tracing::info!("App Name: {}", config.app.name);
+    tracing::info!("App Version: {}", config.app.version);
+    tracing::info!("App Description: {}", config.app.description);
 
     // Parse the command line arguments.
     let args = Args::parse();
@@ -84,4 +94,18 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_load_toml_config() {
+        let config_path = std::env::var("APP_CONFIG").unwrap_or_else(|_| "./app.toml".to_string());
+        let config: Config = load_toml_config(config_path);
+        assert_eq!(config.app.name, "raven");
+        assert_eq!(config.app.version, "0.1.0");
+        assert_eq!(config.app.description, "Search engine done right");
+    }
 }
