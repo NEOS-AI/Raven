@@ -9,7 +9,7 @@ use std::io::{self, Write};
 use tracing_subscriber;
 
 #[derive(Parser)]
-#[command(name = "rust-search-engine")]
+#[command(name = "raven")]
 #[command(about = "A high-performance search engine built with Rust and Tantivy")]
 struct Cli {
     #[command(subcommand)]
