@@ -27,6 +27,9 @@ pub enum SearchEngineError {
     /// Configuration errors
     ConfigError(String),
 
+    /// Search errors
+    SearchError(String),
+
     /// Generic error with custom message
     CustomError(String),
 }
@@ -42,6 +45,7 @@ impl fmt::Display for SearchEngineError {
             SearchEngineError::QueryError(msg) => write!(f, "Query error: {}", msg),
             SearchEngineError::IndexError(msg) => write!(f, "Index error: {}", msg),
             SearchEngineError::ConfigError(msg) => write!(f, "Configuration error: {}", msg),
+            SearchEngineError::SearchError(msg) => write!(f, "Search error: {}", msg),
             SearchEngineError::CustomError(msg) => write!(f, "Error: {}", msg),
         }
     }

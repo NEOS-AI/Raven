@@ -2,8 +2,8 @@ use crate::error::{Result, SearchEngineError};
 use crate::types::{FieldType, FieldValue, SchemaDefinition};
 use std::collections::HashMap;
 use tantivy::schema::{
-    DateOptions, FAST, Field, INDEXED, NumericOptions, STORED, STRING, Schema, SchemaBuilder, TEXT,
-    TextFieldIndexing, TextOptions,
+    DateOptions, Field, INDEXED, NumericOptions, STORED, STRING, Schema, SchemaBuilder, TEXT,
+    TextFieldIndexing, TextOptions, Value,
 };
 
 /// Schema manager for handling Tantivy schemas
@@ -159,17 +159,17 @@ impl SchemaManager {
                 FieldType::Facet => schema_builder.add_facet_field(field_name, INDEXED),
 
                 FieldType::Bytes { stored, indexed } => {
-                    let mut flags = tantivy::schema::FAST;
+                    let mut options = tantivy::schema::BytesOptions::default();
 
                     if *stored {
-                        flags |= STORED;
+                        options = options.set_stored();
                     }
 
                     if *indexed {
-                        flags |= INDEXED;
+                        options = options.set_indexed();
                     }
 
-                    schema_builder.add_bytes_field(field_name, flags)
+                    schema_builder.add_bytes_field(field_name, options)
                 }
 
                 FieldType::Geo {
@@ -220,7 +220,7 @@ impl SchemaManager {
         })?;
 
         let tantivy_value = match value {
-            FieldValue::Text(text) => tantivy::schema::OwnedValue::Str(text.clone()),
+            FieldValue::Text(text) => tantivy::schema::OwnedValue::Str(text.to_string()),
             FieldValue::I64(num) => tantivy::schema::OwnedValue::I64(*num),
             FieldValue::F64(num) => tantivy::schema::OwnedValue::F64(*num),
             FieldValue::Date(date) => {
@@ -228,12 +228,12 @@ impl SchemaManager {
                 tantivy::schema::OwnedValue::Date(tantivy::DateTime::from_timestamp_secs(timestamp))
             }
             FieldValue::Facet(facet) => {
-                let facet_path = tantivy::schema::Facet::from_text(facet).map_err(|e| {
+                let facet_path = tantivy::schema::Facet::from_text(&facet).map_err(|e| {
                     SearchEngineError::SchemaError(format!("Invalid facet '{}': {}", facet, e))
                 })?;
                 tantivy::schema::OwnedValue::Facet(facet_path)
             }
-            FieldValue::Bytes(bytes) => tantivy::schema::OwnedValue::Bytes(bytes.clone()),
+            FieldValue::Bytes(bytes) => tantivy::schema::OwnedValue::Bytes(bytes.to_vec()),
         };
 
         Ok(tantivy_value)
@@ -242,32 +242,43 @@ impl SchemaManager {
     /// Convert Tantivy document to our format
     pub fn document_from_tantivy(
         &self,
-        doc: &tantivy::Document,
+        doc: &impl tantivy::Document,
     ) -> Result<HashMap<String, FieldValue>> {
         let mut fields = HashMap::new();
 
         for (field_name, field) in &self.field_map {
-            if let Some(values) = doc.get_all(*field) {
+            // Collect all values for this field from the document
+            let mut values = Vec::new();
+            for (_field, value) in doc.iter_fields_and_values() {
+                if _field == *field {
+                    values.push(value);
+                }
+            }
+
+            if !values.is_empty() {
                 if let Some(value) = values.first() {
-                    let field_value = match value {
-                        tantivy::schema::Value::Str(s) => FieldValue::Text(s.clone()),
-                        tantivy::schema::Value::I64(i) => FieldValue::I64(*i),
-                        tantivy::schema::Value::F64(f) => FieldValue::F64(*f),
-                        tantivy::schema::Value::Date(d) => {
-                            let dt = chrono::DateTime::from_timestamp(d.into_timestamp_secs(), 0)
-                                .unwrap_or_default()
-                                .and_utc();
-                            FieldValue::Date(dt)
-                        }
-                        tantivy::schema::Value::Facet(f) => FieldValue::Facet(f.to_text()),
-                        tantivy::schema::Value::Bytes(b) => FieldValue::Bytes(b.clone()),
-                        _ => continue,
+                    // Use pattern matching without trying to match on the enum variant directly
+                    let field_value = if let Some(s) = value.as_str() {
+                        FieldValue::Text(s.to_string())
+                    } else if let Some(i) = value.as_i64() {
+                        FieldValue::I64(i)
+                    } else if let Some(f) = value.as_f64() {
+                        FieldValue::F64(f)
+                    } else if let Some(d) = value.as_datetime() {
+                        let timestamp = d.into_timestamp_secs();
+                        let dt = chrono::DateTime::from_timestamp(timestamp, 0).unwrap_or_default();
+                        FieldValue::Date(dt)
+                    } else if let Some(f) = value.as_facet() {
+                        FieldValue::Facet(f.to_string())
+                    } else if let Some(b) = value.as_bytes() {
+                        FieldValue::Bytes(b.to_vec())
+                    } else {
+                        continue;
                     };
                     fields.insert(field_name.clone(), field_value);
                 }
             }
         }
-
         Ok(fields)
     }
 

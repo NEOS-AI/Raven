@@ -38,6 +38,7 @@ rustc-hash = "2.1.1"
 async-trait = "0.1.88"
 chrono = { version = "0.4.41", features = ["serde"] }
 tempfile = "3.20.0"
+tantivy-derive = "0.3.0"
 
 
 [dependencies.rust_icu_ubrk]

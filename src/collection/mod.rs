@@ -4,7 +4,8 @@ use crate::types::{CollectionStats, FieldValue, IndexDocument, SchemaDefinition}
 use chrono::Utc;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
-use tantivy::{Document, Index, IndexWriter, ReloadPolicy};
+use tantivy::schema::Document;
+use tantivy::{Index, IndexWriter, ReloadPolicy, doc};
 
 /// Collection represents a single searchable collection with its own schema
 #[derive(Clone)]
@@ -94,14 +95,14 @@ impl Collection {
 
     /// Add a document to the collection
     pub fn add_document(&self, doc: IndexDocument) -> Result<()> {
-        let mut tantivy_doc = Document::default();
+        let mut tantivy_doc = tantivy::schema::document::TantivyDocument::default();
 
         // Add document ID
         let id_field = self
             .schema_manager
             .get_field("_id")
             .ok_or_else(|| SearchEngineError::IndexError("ID field not found".to_string()))?;
-        tantivy_doc.add_text(id_field, &doc.id);
+        tantivy_doc.add_text(id_field, doc.id.clone());
 
         // Add document fields
         for (field_name, field_value) in &doc.fields {
@@ -117,12 +118,18 @@ impl Collection {
             })?;
 
             match field_value {
-                FieldValue::Text(s) => tantivy_doc.add_text(field, &s),
-                FieldValue::I64(i) => tantivy_doc.add_i64(field, i),
-                FieldValue::F64(f) => tantivy_doc.add_f64(field, f),
-                FieldValue::Date(d) => tantivy_doc.add_date(field, d),
-                FieldValue::Facet(f) => tantivy_doc.add_facet(field, f),
-                FieldValue::Bytes(b) => tantivy_doc.add_bytes(field, &b),
+                FieldValue::Text(s) => tantivy_doc.add_text(field, s),
+                FieldValue::I64(i) => tantivy_doc.add_i64(field, *i),
+                FieldValue::F64(f) => tantivy_doc.add_f64(field, *f),
+                FieldValue::Date(d) => tantivy_doc
+                    .add_date(field, tantivy::DateTime::from_timestamp_secs(d.timestamp())),
+                FieldValue::Facet(f) => {
+                    let facet = tantivy::schema::Facet::from_text(f).map_err(|e| {
+                        SearchEngineError::IndexError(format!("Invalid facet '{}': {}", f, e))
+                    })?;
+                    tantivy_doc.add_facet(field, facet)
+                }
+                FieldValue::Bytes(b) => tantivy_doc.add_bytes(field, b),
                 _ => {
                     return Err(SearchEngineError::IndexError(format!(
                         "Unsupported value type for field '{}'",
@@ -134,7 +141,7 @@ impl Collection {
 
         // Add document to index
         {
-            let mut writer = self.writer.write().unwrap();
+            let writer = self.writer.write().unwrap();
             writer.add_document(tantivy_doc)?;
         }
 
@@ -153,8 +160,8 @@ impl Collection {
 
         let term = tantivy::Term::from_field_text(id_field, &doc.id);
 
-        let mut tantivy_doc = Document::default();
-        tantivy_doc.add_text(id_field, &doc.id);
+        let mut tantivy_doc = tantivy::schema::document::TantivyDocument::default();
+        tantivy_doc.add_text(id_field, doc.id.clone());
 
         // Add document fields
         for (field_name, field_value) in &doc.fields {
@@ -173,12 +180,12 @@ impl Collection {
                 .field_value_to_tantivy(field_name, field_value)?;
 
             match tantivy_value {
-                FieldValue::Text(s) => tantivy_doc.add_text(field, &s),
-                FieldValue::I64(i) => tantivy_doc.add_i64(field, i),
-                FieldValue::F64(f) => tantivy_doc.add_f64(field, f),
-                FieldValue::Date(d) => tantivy_doc.add_date(field, d),
-                FieldValue::Facet(f) => tantivy_doc.add_facet(field, f),
-                FieldValue::Bytes(b) => tantivy_doc.add_bytes(field, &b),
+                tantivy::schema::OwnedValue::Str(s) => tantivy_doc.add_text(field, s),
+                tantivy::schema::OwnedValue::I64(i) => tantivy_doc.add_i64(field, i),
+                tantivy::schema::OwnedValue::F64(f) => tantivy_doc.add_f64(field, f),
+                tantivy::schema::OwnedValue::Date(d) => tantivy_doc.add_date(field, d),
+                tantivy::schema::OwnedValue::Facet(f) => tantivy_doc.add_facet(field, f),
+                tantivy::schema::OwnedValue::Bytes(b) => tantivy_doc.add_bytes(field, &b),
                 _ => {
                     return Err(SearchEngineError::IndexError(format!(
                         "Unsupported value type for field '{}'",
@@ -190,7 +197,7 @@ impl Collection {
 
         // Update document in index
         {
-            let mut writer = self.writer.write().unwrap();
+            let writer = self.writer.write().unwrap();
             writer.delete_term(term);
             writer.add_document(tantivy_doc)?;
         }
@@ -211,7 +218,7 @@ impl Collection {
         let term = tantivy::Term::from_field_text(id_field, doc_id);
 
         {
-            let mut writer = self.writer.write().unwrap();
+            let writer = self.writer.write().unwrap();
             writer.delete_term(term);
         }
 
@@ -232,7 +239,7 @@ impl Collection {
         let reader = self
             .index
             .reader_builder()
-            .reload_policy(ReloadPolicy::OnCommit)
+            .reload_policy(ReloadPolicy::Manual)
             .try_into()?;
         reader.reload()?;
 

@@ -4,8 +4,9 @@ use crate::types::{
     FieldValue, QueryExpression, SearchHit, SearchQuery, SearchResult, SortField, SortOrder,
 };
 use std::time::Instant;
+use tantivy::schema::Value;
 use tantivy::{
-    DocAddress, Score, Searcher, TantivyDocument,
+    DocAddress, Score, Searcher, TantivyDocument, Term,
     collector::{Count, TopDocs},
     query::*,
     schema::Field,
@@ -139,45 +140,63 @@ impl SearchEngine {
 
                 match (min, max) {
                     (Some(FieldValue::I64(min_val)), Some(FieldValue::I64(max_val))) => {
-                        let bound = if *inclusive {
-                            std::ops::Bound::Included
+                        // let bound = if *inclusive {
+                        //     std::ops::Bound::Included
+                        // } else {
+                        //     std::ops::Bound::Excluded
+                        // };
+
+                        let min_term = Term::from_field_i64(field_obj, *min_val);
+                        let max_term = Term::from_field_i64(field_obj, *max_val);
+                        let lower_bound = if *inclusive {
+                            std::ops::Bound::Included(min_term)
                         } else {
-                            std::ops::Bound::Excluded
+                            std::ops::Bound::Excluded(min_term)
+                        };
+                        let upper_bound = if *inclusive {
+                            std::ops::Bound::Included(max_term)
+                        } else {
+                            std::ops::Bound::Excluded(max_term)
                         };
 
-                        Ok(Box::new(RangeQuery::new_i64_bounds(
-                            field,
-                            bound(*min_val)..bound(*max_val),
-                        )))
+                        Ok(Box::new(RangeQuery::new(lower_bound, upper_bound)))
                     }
 
                     (Some(FieldValue::F64(min_val)), Some(FieldValue::F64(max_val))) => {
-                        let bound = if *inclusive {
-                            std::ops::Bound::Included
+                        let min_term = Term::from_field_f64(field_obj, *min_val);
+                        let max_term = Term::from_field_f64(field_obj, *max_val);
+                        let lower_bound = if *inclusive {
+                            std::ops::Bound::Included(min_term)
                         } else {
-                            std::ops::Bound::Excluded
+                            std::ops::Bound::Excluded(min_term)
+                        };
+                        let upper_bound = if *inclusive {
+                            std::ops::Bound::Included(max_term)
+                        } else {
+                            std::ops::Bound::Excluded(max_term)
                         };
 
-                        Ok(Box::new(RangeQuery::new_f64_bounds(
-                            field,
-                            bound(*min_val)..bound(*max_val),
-                        )))
+                        Ok(Box::new(RangeQuery::new(lower_bound, upper_bound)))
                     }
 
                     (Some(FieldValue::Date(min_date)), Some(FieldValue::Date(max_date))) => {
                         let min_dt = tantivy::DateTime::from_timestamp_secs(min_date.timestamp());
                         let max_dt = tantivy::DateTime::from_timestamp_secs(max_date.timestamp());
 
-                        let bound = if *inclusive {
-                            std::ops::Bound::Included
+                        let min_term = Term::from_field_date(field_obj, min_dt);
+                        let max_term = Term::from_field_date(field_obj, max_dt);
+                        let lower_bound = if *inclusive {
+                            std::ops::Bound::Included(min_term)
                         } else {
-                            std::ops::Bound::Excluded
+                            std::ops::Bound::Excluded(min_term)
+                        };
+                        let upper_bound = if *inclusive {
+                            std::ops::Bound::Included(max_term)
+                        } else {
+                            std::ops::Bound::Excluded(max_term)
                         };
 
-                        Ok(Box::new(RangeQuery::new_date_bounds(
-                            field,
-                            bound(min_dt)..bound(max_dt),
-                        )))
+                        Ok(Box::new(RangeQuery::new(lower_bound, upper_bound)))
                     }
 
                     _ => Err(SearchEngineError::QueryError(
@@ -192,13 +211,13 @@ impl SearchEngine {
                 must_not,
                 minimum_should_match,
             } => {
-                let mut bool_query = BooleanQuery::new();
+                let mut clauses: Vec<(Occur, Box<dyn Query>)> = Vec::new();
 
                 // Add MUST clauses
                 if let Some(must_queries) = must {
                     for query_expr in must_queries {
                         let sub_query = self.build_query(query_expr)?;
-                        bool_query = bool_query.add_must(sub_query);
+                        clauses.push((Occur::Must, sub_query));
                     }
                 }
 
@@ -206,7 +225,7 @@ impl SearchEngine {
                 if let Some(should_queries) = should {
                     for query_expr in should_queries {
                         let sub_query = self.build_query(query_expr)?;
-                        bool_query = bool_query.add_should(sub_query);
+                        clauses.push((Occur::Should, sub_query));
                     }
                 }
 
@@ -214,9 +233,12 @@ impl SearchEngine {
                 if let Some(must_not_queries) = must_not {
                     for query_expr in must_not_queries {
                         let sub_query = self.build_query(query_expr)?;
-                        bool_query = bool_query.add_must_not(sub_query);
+                        clauses.push((Occur::MustNot, sub_query));
                     }
                 }
+
+                // Create the boolean query
+                let bool_query = BooleanQuery::new(clauses);
 
                 // TODO: Handle minimum_should_match when Tantivy supports it
 
@@ -241,7 +263,7 @@ impl SearchEngine {
                 let facet = tantivy::schema::Facet::from_text(facet_str).map_err(|e| {
                     SearchEngineError::QueryError(format!("Invalid facet '{}': {}", facet_str, e))
                 })?;
-                tantivy::Term::from_field_text(field, &facet.to_text())
+                tantivy::Term::from_field_text(field, &facet.to_string())
             }
             FieldValue::Bytes(_) => {
                 return Err(SearchEngineError::QueryError(
@@ -267,12 +289,12 @@ impl SearchEngine {
             .collection
             .schema_manager
             .get_field("_id")
-            .ok_or_else(|| SearchEngineError::SearchError("ID field not found".to_string()))?;
+            .ok_or_else(|| SearchEngineError::search_error("ID field not found".to_string()))?;
 
         let id = doc
             .get_first(id_field)
-            .and_then(|v| v.as_text())
-            .ok_or_else(|| SearchEngineError::SearchError("Document ID not found".to_string()))?
+            .and_then(|v| v.to_owned().as_str())
+            .ok_or_else(|| SearchEngineError::search_error("Document ID not found".to_string()))?
             .to_string();
 
         // Convert document fields
