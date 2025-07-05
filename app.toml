@@ -1,0 +1,4 @@
+[app]
+name = "raven"
+version = "0.1.0"
+description = "Search engine done right"
