@@ -215,9 +215,11 @@ impl SchemaManager {
         field_name: &str,
         value: &FieldValue,
     ) -> Result<tantivy::schema::OwnedValue> {
-        let field = self.get_field(field_name).ok_or_else(|| {
-            SearchEngineError::SchemaError(format!("Field '{}' not found in schema", field_name))
-        })?;
+        // let field = self.get_field(field_name).ok_or_else(|| {
+        //     SearchEngineError::SchemaError(format!("Field '{}' not found in schema", field_name))
+        // })?;
+        // Validate field value against schema
+        self.validate_field_value(field_name, value)?;
 
         let tantivy_value = match value {
             FieldValue::Text(text) => tantivy::schema::OwnedValue::Str(text.to_string()),

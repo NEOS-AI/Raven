@@ -4,7 +4,6 @@ use crate::types::{CollectionStats, FieldValue, IndexDocument, SchemaDefinition}
 use chrono::Utc;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
-use tantivy::schema::Document;
 use tantivy::{Index, IndexWriter, ReloadPolicy, doc};
 
 /// Collection represents a single searchable collection with its own schema
@@ -130,12 +129,12 @@ impl Collection {
                     tantivy_doc.add_facet(field, facet)
                 }
                 FieldValue::Bytes(b) => tantivy_doc.add_bytes(field, b),
-                _ => {
-                    return Err(SearchEngineError::IndexError(format!(
-                        "Unsupported value type for field '{}'",
-                        field_name
-                    )));
-                }
+                // _ => {
+                //     return Err(SearchEngineError::IndexError(format!(
+                //         "Unsupported value type for field '{}'",
+                //         field_name
+                //     )));
+                // }
             }
         }
 
